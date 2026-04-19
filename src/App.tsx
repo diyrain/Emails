@@ -64,6 +64,18 @@ export default function App() {
   const [selectedMood, setSelectedMood] = useState<string>('');
   const [selectedWeather, setSelectedWeather] = useState<string>('');
 
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\//g, '-');
+  };
+
   // Auth & Data Sync
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -569,7 +581,10 @@ export default function App() {
                             className="bg-white p-8 editorial-shadow border border-ink/5 group cursor-pointer hover:-translate-y-1 items-start transition-all"
                           >
                             <span className="block font-sans text-[10px] uppercase tracking-widest opacity-40 mb-3">
-                              {new Date(letter.createdAt).toLocaleDateString()}
+                              {formatDateTime(letter.createdAt)}
+                              {letter.updatedAt > letter.createdAt + 1000 && (
+                                <span className="ml-2 font-serif italic text-[9px] opacity-70">(已于 {formatDateTime(letter.updatedAt)} 修改)</span>
+                              )}
                               {(letter.mood || letter.weather) && (
                                 <span className="ml-2 inline-flex gap-2">
                                   {letter.mood && <span>{letter.mood}</span>}
@@ -666,7 +681,12 @@ export default function App() {
               
               <div className="mb-16 border-b border-ink/10 pb-10">
                 <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-accent block mb-6">
-                  {new Date(viewingLetter.createdAt).toLocaleDateString()} • {new Date(viewingLetter.createdAt).toLocaleDateString('zh-CN', { weekday: 'long' })}
+                  档案记录于：{formatDateTime(viewingLetter.createdAt)}
+                  {viewingLetter.updatedAt > viewingLetter.createdAt + 1000 && (
+                    <span className="ml-3 normal-case opacity-50 italic"> (修改于 {formatDateTime(viewingLetter.updatedAt)})</span>
+                  )}
+                  <span className="ml-3 opacity-30">|</span>
+                  <span className="ml-3">{new Date(viewingLetter.createdAt).toLocaleDateString('zh-CN', { weekday: 'long' })}</span>
                   {(viewingLetter.mood || viewingLetter.weather) && (
                     <span className="ml-4 inline-flex gap-3">
                       {viewingLetter.mood && <span title="心情">{viewingLetter.mood}</span>}
