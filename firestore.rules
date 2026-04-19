@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isSignedIn(); 
+      allow create: if isOwner(userId) 
+        && incoming().userId == userId
+        && incoming().email is string
+        && incoming().keys().hasAll(['userId', 'email'])
+        && incoming().keys().size() <= 10;
+      allow update: if isOwner(userId)
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL']);
+    }
+
+    // --- Letters Collection ---
+    match /letters/{letterId} {
+      function isValidLetter(data) {
+        return data.id is string && data.id.size() <= 128
+          && data.title is string && data.title.size() <= 200
+          && data.recipient is string && data.recipient.size() <= 200
+          && data.content is string && data.content.size() <= 50000
+          && (data.mood == null || (data.mood is string && data.mood.size() <= 50))
+          && (data.weather == null || (data.weather is string && data.weather.size() <= 50))
+          && data.authorId == request.auth.uid
+          && data.createdAt is number
+          && data.updatedAt is number;
+      }
+
+      allow list: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(letterId)
+        && isValidLetter(incoming())
+        && incoming().id == letterId;
+
+      allow update: if isSignedIn() 
+        && existing().authorId == request.auth.uid
+        && isValidLetter(incoming())
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'recipient', 'content', 'mood', 'weather', 'updatedAt']);
+
+      allow delete: if isSignedIn() 
+        && resource.data.authorId == request.auth.uid;
+    }
+  }
+}

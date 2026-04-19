@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-sans: "Helvetica Neue", "Arial", sans-serif;
+  --color-paper: #F9F7F2;
+  --color-ink: #2C2C2B;
+  --color-accent: #8C7851;
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink selection:bg-accent/20 font-serif overflow-x-hidden;
+  }
+}
+
+.paper-texture {
+  background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+}
+
+.editorial-shadow {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+}
+
+.letter-underline {
+  @apply underline underline-offset-4 decoration-accent/40;
+}
